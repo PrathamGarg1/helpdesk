@@ -1,0 +1,27 @@
+
+> z13dep@0.1.0 build
+> next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env
+
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+  Creating an optimized production build ...
+✓ Compiled successfully in 11.6s
+  Running TypeScript ...
+Failed to compile.
+
+./actions/comments.ts:16:13
+Type error: Type '{ text: string; ticketId: string; userId: string | undefined; }' is not assignable to type '(Without<CommentCreateInput, CommentUncheckedCreateInput> & CommentUncheckedCreateInput) | (Without<...> & CommentCreateInput)'.
+  Types of property 'userId' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+
+[0m [90m 14 |[39m     [36mtry[39m {
+ [90m 15 |[39m         [36mawait[39m prisma[33m.[39mcomment[33m.[39mcreate({
+[31m[1m>[22m[39m[90m 16 |[39m             data[33m:[39m {
+ [90m    |[39m             [31m[1m^[22m[39m
+ [90m 17 |[39m                 text[33m,[39m
+ [90m 18 |[39m                 ticketId[33m,[39m
+ [90m 19 |[39m                 userId[33m:[39m session[33m.[39muser[33m.[39mid[33m,[39m[0m
+Next.js build worker exited with code: 1 and signal: null

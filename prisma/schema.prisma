@@ -1,0 +1,133 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  REQUESTER
+  DEPT_ADMIN
+  TECHNICIAN
+  SUPER_ADMIN
+}
+
+enum TicketStatus {
+  OPEN
+  ASSIGNED
+  RESOLVED // Pending OTP verification
+  CLOSED
+  CANCELLED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Optional if only using OTP, but keeping for fallback/admin
+  name      String
+  role      Role     @default(REQUESTER)
+  phone     String?
+  
+  // Auth fields
+  loginOtp          String?
+  loginOtpExpiresAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  
+  // As Requester
+  createdTickets Ticket[] @relation("RequesterTickets")
+  
+  // As Technician
+  assignedTickets Ticket[] @relation("TechnicianTickets")
+  
+  // As Manager
+  managedDepartment Department? @relation("Manager")
+
+  auditLogs AuditLog[]
+  comments  Comment[]
+}
+
+model Department {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  managerId String?  @unique
+  manager   User?    @relation("Manager", fields: [managerId], references: [id])
+  users     User[] 
+  tickets   Ticket[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Ticket {
+  id          String       @id @default(cuid())
+  uuid        String       @unique @default(uuid())
+  title       String
+  description String
+  status      TicketStatus @default(OPEN)
+  priority    Priority     @default(LOW)
+  location    String?
+  image       String?
+  
+  // OTP Logic (Completion Handshake)
+  otp         String?
+  otpExpiresAt DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+
+  requesterId String
+  requester   User   @relation("RequesterTickets", fields: [requesterId], references: [id])
+
+  technicianId String?
+  technician   User?   @relation("TechnicianTickets", fields: [technicianId], references: [id])
+
+  auditLogs AuditLog[]
+  comments  Comment[]
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+  
+  ticketId  String
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  action    String
+  details   String?
+  metadata  Json?    // For storing extra details like previous values
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  ticketId  String?
+  ticket    Ticket?  @relation(fields: [ticketId], references: [id])
+  
+  createdAt DateTime @default(now())
+}
