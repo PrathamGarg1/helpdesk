@@ -10,8 +10,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 // Template CSV content
 const TEMPLATE_CSV = `email,name,role,department
 john@iitrpr.ac.in,John Doe,REQUESTER,
-jane@iitrpr.ac.in,Jane Smith,TECHNICIAN,
-admin@iitrpr.ac.in,Admin User,DEPT_ADMIN,`
+jane@iitrpr.ac.in,Jane Smith,TECHNICIAN,Computer Science
+admin@iitrpr.ac.in,Admin User,DEPT_ADMIN,Computer Science
+super@iitrpr.ac.in,Super Admin,SUPER_ADMIN,`
 
 // Valid roles for validation hint
 const VALID_ROLES = ['REQUESTER', 'TECHNICIAN', 'DEPT_ADMIN', 'SUPER_ADMIN']
@@ -82,7 +83,7 @@ export function CsvImport() {
                     <li>Download the CSV template below</li>
                     <li>Fill in user data (one user per row)</li>
                     <li>Valid roles: <code className="text-xs bg-muted px-1 rounded">REQUESTER</code>, <code className="text-xs bg-muted px-1 rounded">TECHNICIAN</code>, <code className="text-xs bg-muted px-1 rounded">DEPT_ADMIN</code>, <code className="text-xs bg-muted px-1 rounded">SUPER_ADMIN</code></li>
-                    <li>The <code className="text-xs bg-muted px-1 rounded">department</code> column is optional — leave it blank if not applicable</li>
+                    <li><strong>Department is required</strong> for <code className="text-xs bg-muted px-1 rounded">TECHNICIAN</code> and <code className="text-xs bg-muted px-1 rounded">DEPT_ADMIN</code> — leave blank for <code className="text-xs bg-muted px-1 rounded">REQUESTER</code> and <code className="text-xs bg-muted px-1 rounded">SUPER_ADMIN</code></li>
                     <li>Upload the edited CSV file</li>
                 </ol>
             </div>

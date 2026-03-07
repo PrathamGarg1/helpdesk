@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma'
+import { auth } from '@/auth'
 import { TriageTable } from '@/components/triage-table'
 import { TechnicianGrid } from '@/components/technician-grid'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -10,13 +11,30 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 export default async function ManagerPage() {
+    const session = await auth()
+    if (!session?.user?.id) return <div className="p-8">Unauthorized</div>
+
+    // Look up the manager's department
+    const manager = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        include: { managedDepartment: true }
+    })
+
+    if (!manager?.managedDepartment) {
+        return <div className="p-8">You are not assigned to manage any department.</div>
+    }
+
+    const deptId = manager.managedDepartment.id
+    const deptName = manager.managedDepartment.name
+
     let openTickets: any[] = []
     let technicians: any[] = []
     let error = null
 
     try {
+        // Only fetch tickets for THIS department
         openTickets = await prisma.ticket.findMany({
-            where: { status: 'OPEN' },
+            where: { status: 'OPEN', departmentId: deptId },
             include: {
                 requester: true,
                 department: true,
@@ -25,8 +43,9 @@ export default async function ManagerPage() {
             orderBy: { createdAt: 'asc' }
         })
 
+        // Only fetch technicians from THIS department
         technicians = await prisma.user.findMany({
-            where: { role: 'TECHNICIAN' },
+            where: { role: 'TECHNICIAN', departmentId: deptId },
             include: {
                 _count: {
                     select: { assignedTickets: { where: { status: { not: 'CLOSED' } } } }
@@ -49,7 +68,7 @@ export default async function ManagerPage() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Department Dashboard</h2>
+                    <h2 className="text-3xl font-bold tracking-tight">{deptName} Department Dashboard</h2>
                     <p className="text-muted-foreground">
                         Manage tickets and technician assignments
                     </p>

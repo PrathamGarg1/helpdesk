@@ -5,6 +5,8 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { Role } from '@prisma/client'
 
+const ROLES_REQUIRING_DEPT: Role[] = ['TECHNICIAN', 'DEPT_ADMIN']
+
 const UserSchema = z.object({
     name: z.string().min(2),
     email: z.string().email(),
@@ -25,6 +27,16 @@ export async function createUser(prevState: any, formData: FormData) {
         return { error: 'Invalid data', details: validated.error.flatten() }
     }
 
+    const { role, departmentId } = validated.data
+
+    // Enforce: TECHNICIAN and DEPT_ADMIN must have a department
+    if (ROLES_REQUIRING_DEPT.includes(role) && !departmentId) {
+        return { error: 'A department must be selected for Technician and Dept Manager roles.' }
+    }
+
+    // Enforce: REQUESTER and SUPER_ADMIN must NOT have a department
+    const finalDeptId = ROLES_REQUIRING_DEPT.includes(role) ? departmentId : undefined
+
     try {
         const existing = await prisma.user.findUnique({ where: { email: data.email } })
         if (existing) return { error: 'User already exists with this email.' }
@@ -32,6 +44,7 @@ export async function createUser(prevState: any, formData: FormData) {
         await prisma.user.create({
             data: {
                 ...validated.data,
+                departmentId: finalDeptId,
                 password: 'otp-only-account', // Placeholder, not used
             }
         })
@@ -52,16 +65,24 @@ export async function importUsers(users: any[]) {
     for (const user of users) {
         const validated = UserSchema.safeParse(user)
         if (!validated.success) {
-            errors.push(`Invalid data for ${user.email || 'unknown flow'}`)
+            errors.push(`Invalid data for ${user.email || 'unknown'}`)
             continue
+        }
+
+        // Apply same dept rule: only TECHNICIAN / DEPT_ADMIN keep a departmentId
+        const cleanedData = {
+            ...validated.data,
+            departmentId: ROLES_REQUIRING_DEPT.includes(validated.data.role)
+                ? validated.data.departmentId
+                : undefined,
         }
 
         try {
             await prisma.user.upsert({
-                where: { email: validated.data.email },
-                update: { ...validated.data },
+                where: { email: cleanedData.email },
+                update: { ...cleanedData },
                 create: {
-                    ...validated.data,
+                    ...cleanedData,
                     password: 'otp-only-account'
                 }
             })
