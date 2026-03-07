@@ -74,3 +74,51 @@ export async function importUsers(users: any[]) {
     revalidatePath('/admin/users')
     return { successCount, errors }
 }
+
+export async function createDepartment(prevState: any, formData: FormData) {
+    const name = (formData.get('name') as string)?.trim()
+
+    if (!name || name.length < 2) {
+        return { error: 'Department name must be at least 2 characters.' }
+    }
+
+    try {
+        const existing = await prisma.department.findUnique({ where: { name } })
+        if (existing) return { error: `Department "${name}" already exists.` }
+
+        await prisma.department.create({ data: { name } })
+
+        revalidatePath('/admin')
+        revalidatePath('/admin/users')
+        return { success: true, message: `Department "${name}" created successfully.` }
+    } catch (e) {
+        console.error(e)
+        return { error: 'Failed to create department.' }
+    }
+}
+
+export async function deleteDepartment(id: string) {
+    try {
+        // Check if department has any tickets or users assigned
+        const dept = await prisma.department.findUnique({
+            where: { id },
+            include: {
+                _count: { select: { tickets: true, users: true } }
+            }
+        })
+
+        if (!dept) return { error: 'Department not found.' }
+        if (dept._count.tickets > 0) return { error: `Cannot delete: department has ${dept._count.tickets} ticket(s).` }
+        if (dept._count.users > 0) return { error: `Cannot delete: department has ${dept._count.users} user(s) assigned.` }
+
+        await prisma.department.delete({ where: { id } })
+
+        revalidatePath('/admin')
+        revalidatePath('/admin/users')
+        return { success: true }
+    } catch (e) {
+        console.error(e)
+        return { error: 'Failed to delete department.' }
+    }
+}
+

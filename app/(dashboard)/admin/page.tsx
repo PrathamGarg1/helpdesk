@@ -5,6 +5,7 @@ import { AlertCircle } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { DepartmentManager } from '@/components/admin/department-manager'
 
 export default async function AdminPage() {
     let heatmapData: { name: string; tickets: number }[] = []
@@ -34,11 +35,18 @@ export default async function AdminPage() {
         error = "Failed to fetch admin data. Check DB connection."
     }
 
+    // Fetch departments with counts for manager
+    const allDepartments = await prisma.department.findMany({
+        include: { _count: { select: { users: true, tickets: true } } },
+        orderBy: { name: 'asc' },
+    }).catch(() => [])
+
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">System Overview</h2>
                 <div className="flex items-center space-x-2">
+                    <DepartmentManager departments={allDepartments} />
                     <Link href="/api/export/tickets" target="_blank">
                         <Button variant="outline">Export CSV</Button>
                     </Link>
