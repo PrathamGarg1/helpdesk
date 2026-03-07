@@ -41,11 +41,21 @@ export async function createUser(prevState: any, formData: FormData) {
         const existing = await prisma.user.findUnique({ where: { email: data.email } })
         if (existing) return { error: 'User already exists with this email.' }
 
-        await prisma.user.create({
-            data: {
-                ...validated.data,
-                departmentId: finalDeptId,
-                password: 'otp-only-account', // Placeholder, not used
+        await prisma.$transaction(async (tx) => {
+            const newUser = await tx.user.create({
+                data: {
+                    ...validated.data,
+                    departmentId: finalDeptId,
+                    password: 'otp-only-account', // Placeholder, not used
+                }
+            })
+
+            // If this user is a DEPT_ADMIN, set them as the manager of their department
+            if (role === 'DEPT_ADMIN' && finalDeptId) {
+                await tx.department.update({
+                    where: { id: finalDeptId },
+                    data: { managerId: newUser.id }
+                })
             }
         })
 
@@ -78,12 +88,22 @@ export async function importUsers(users: any[]) {
         }
 
         try {
-            await prisma.user.upsert({
-                where: { email: cleanedData.email },
-                update: { ...cleanedData },
-                create: {
-                    ...cleanedData,
-                    password: 'otp-only-account'
+            await prisma.$transaction(async (tx) => {
+                const savedUser = await tx.user.upsert({
+                    where: { email: cleanedData.email },
+                    update: { ...cleanedData },
+                    create: {
+                        ...cleanedData,
+                        password: 'otp-only-account'
+                    }
+                })
+
+                // If this user is a DEPT_ADMIN, set them as the manager of their department
+                if (cleanedData.role === 'DEPT_ADMIN' && cleanedData.departmentId) {
+                    await tx.department.update({
+                        where: { id: cleanedData.departmentId },
+                        data: { managerId: savedUser.id }
+                    })
                 }
             })
             successCount++
