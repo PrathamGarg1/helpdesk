@@ -17,13 +17,25 @@ export async function sendLoginOTP(formData: FormData) {
     }
 
     try {
-        // 1. Check Whitelist (User must exist)
-        const user = await prisma.user.findUnique({
+        // 1. Check Whitelist: allow @iitrpr.ac.in domain OR superadmin-added users
+        let user = await prisma.user.findUnique({
             where: { email },
         })
 
         if (!user) {
-            return { error: 'Access Denied: Email not registered in the system.' }
+            if (email.endsWith('@iitrpr.ac.in')) {
+                // Auto-provision IITRPR users as REQUESTER on first login
+                user = await prisma.user.create({
+                    data: {
+                        email,
+                        name: email.split('@')[0],
+                        role: 'REQUESTER',
+                        password: 'otp-only-account',
+                    },
+                })
+            } else {
+                return { error: 'Access Denied: Only @iitrpr.ac.in emails or registered users can log in.' }
+            }
         }
 
         // 2. Generate OTP
