@@ -11,6 +11,8 @@ const TicketSchema = z.object({
     description: z.string().min(10),
     priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
     location: z.string().optional(),
+    contactPhone: z.string().optional(),
+    contactEmail: z.string().email('Invalid email').optional().or(z.literal('')),
 })
 
 export async function createTicket(prevState: any, formData: FormData) {
@@ -27,6 +29,8 @@ export async function createTicket(prevState: any, formData: FormData) {
         priority: formData.get('priority') as any,
         location: formData.get('location') as string,
         departmentId: formData.get('departmentId') as string,
+        contactPhone: (formData.get('contactPhone') as string) || undefined,
+        contactEmail: (formData.get('contactEmail') as string) || undefined,
     }
 
     const validated = TicketSchema.extend({

@@ -40,6 +40,8 @@ const formSchema = z.object({
     departmentId: z.string().min(1, 'Please select a department'),
     priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
     location: z.string().optional(),
+    contactPhone: z.string().optional(),
+    contactEmail: z.string().email('Enter a valid email').optional().or(z.literal('')),
 })
 
 export function CreateTicketDialog({ departments }: { departments: { id: string, name: string }[] }) {
@@ -54,6 +56,8 @@ export function CreateTicketDialog({ departments }: { departments: { id: string,
             priority: 'LOW',
             location: '',
             departmentId: '',
+            contactPhone: '',
+            contactEmail: '',
         },
     })
 
@@ -65,6 +69,8 @@ export function CreateTicketDialog({ departments }: { departments: { id: string,
         formData.append('departmentId', values.departmentId)
         formData.append('priority', values.priority)
         if (values.location) formData.append('location', values.location)
+        if (values.contactPhone) formData.append('contactPhone', values.contactPhone)
+        if (values.contactEmail) formData.append('contactEmail', values.contactEmail)
         // TODO: Append requesterId from session context or handle in action
 
         // Mock requester ID for now (Normally this comes from session)
@@ -88,7 +94,7 @@ export function CreateTicketDialog({ departments }: { departments: { id: string,
             <DialogTrigger asChild>
                 <Button>Create New Ticket</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-[540px]">
                 <DialogHeader>
                     <DialogTitle>Create Ticket</DialogTitle>
                     <DialogDescription>
@@ -183,6 +189,36 @@ export function CreateTicketDialog({ departments }: { departments: { id: string,
                                 </FormItem>
                             )}
                         />
+                        {/* Contact Information */}
+                        <div className="rounded-md border p-3 space-y-3">
+                            <p className="text-sm font-medium text-muted-foreground">Contact Information <span className="font-normal">(optional)</span></p>
+                            <FormField
+                                control={form.control}
+                                name="contactPhone"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Phone Number</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="+91 98765 43210" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="contactEmail"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Alternate Email</FormLabel>
+                                        <FormControl>
+                                            <Input type="email" placeholder="alternate@example.com" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                         <DialogFooter>
                             <Button type="submit" disabled={loading}>
                                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

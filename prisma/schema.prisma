@@ -82,8 +82,10 @@ model Ticket {
   description String
   status      TicketStatus @default(OPEN)
   priority    Priority     @default(LOW)
-  location    String?
-  image       String?
+  location      String?
+  image         String?
+  contactPhone  String?
+  contactEmail  String?
   
   // OTP Logic (Completion Handshake)
   otp         String?
