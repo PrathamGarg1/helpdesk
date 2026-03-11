@@ -15,6 +15,7 @@ import { format } from 'date-fns'
 import { Comments } from '@/components/comments'
 import { Timeline } from '@/components/timeline'
 import { Button } from '@/components/ui/button' // Import Button to prevent lint error
+import { Phone, Mail } from 'lucide-react'
 
 interface TicketWithDetails extends Ticket {
     requester: User
@@ -64,6 +65,26 @@ export function TicketSheet({ ticket, children }: { ticket: TicketWithDetails, c
                             {ticket.description}
                         </div>
                     </div>
+
+                    {(ticket.contactPhone || ticket.contactEmail) && (
+                        <div>
+                            <h4 className="text-sm font-medium text-muted-foreground mb-2">Contact Info</h4>
+                            <div className="bg-muted/50 p-3 rounded-md space-y-2">
+                                {ticket.contactPhone && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                                        <span>{ticket.contactPhone}</span>
+                                    </div>
+                                )}
+                                {ticket.contactEmail && (
+                                    <div className="flex items-center gap-2 text-sm">
+                                        <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                                        <span>{ticket.contactEmail}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
                     <Tabs defaultValue="comments" className="w-full">
                         <TabsList className="grid w-full grid-cols-2">
